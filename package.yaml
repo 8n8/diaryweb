@@ -1,0 +1,36 @@
+name:                diaryweb
+version:             0.1.0.0
+
+dependencies:
+- base >= 4.7 && < 5
+
+ghc-options:
+- -Weverything
+- -Werror
+- -Wno-implicit-prelude
+- -Wno-missing-safe-haskell-mode
+- -Wno-safe
+- -Wno-missing-import-lists
+
+library:
+  source-dirs: src
+
+executables:
+  diaryweb-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - diaryweb
+
+tests:
+  diaryweb-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
