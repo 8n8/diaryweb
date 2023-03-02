@@ -11,9 +11,19 @@ ghc-options:
 - -Wno-missing-safe-haskell-mode
 - -Wno-safe
 - -Wno-missing-import-lists
+- -Wno-missing-kind-signatures
+- -Wno-prepositive-qualified-module
+- -Wno-missing-deriving-strategies
+- -Wno-unsafe
+
+default-extensions:
+- OverloadedStrings
 
 library:
   source-dirs: src
+  dependencies:
+  - bytestring
+  - text
 
 executables:
   diaryweb-exe:
@@ -34,3 +44,8 @@ tests:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    dependencies:
+    - bytestring
+    - tasty
+    - tasty-hunit
+    - diaryweb
