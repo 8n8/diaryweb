@@ -15,6 +15,7 @@ ghc-options:
 - -Wno-prepositive-qualified-module
 - -Wno-missing-deriving-strategies
 - -Wno-unsafe
+- -Wno-monomorphism-restriction
 
 default-extensions:
 - OverloadedStrings
@@ -24,6 +25,8 @@ library:
   dependencies:
   - bytestring
   - text
+  - attoparsec
+  - cryptonite
 
 executables:
   diaryweb-exe:
