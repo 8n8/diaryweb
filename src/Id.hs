@@ -1,53 +1,37 @@
-module Id (Http, parseHttp, parseDb) where
+module Id (Id, parse, encode) where
 
-import Data.ByteString (ByteString)
-import Salt (Salt, encode)
-import Crypto.Error (CryptoFailable(..))
-import Crypto.KDF.Argon2
-    (version, variant, parallelism, memory, iterations, Options(..)
-    , hash, Version(..), Variant(..)
-    )
-import Data.Attoparsec.ByteString (Parser, take)
-import Prelude (Int, fail, ($), return, (*))
+import Data.Word (Word8, Word64)
+import Data.ByteString (ByteString, pack)
+import Data.Bits ((.&.), shiftR, shiftL)
+import Data.Attoparsec.ByteString (Parser, anyWord8)
+import Prelude
+    (Int, (==)
+    , (*), map, ($), fromIntegral, (+), return, fmap, take)
 
-newtype Http
-  = Http ByteString
+newtype Id
+    = Id Word64
 
-rawSize :: Int
-rawSize =
-  12
+parse :: Parser Id
+parse =
+    parseHelp 0 0
 
-hashSize :: Int
-hashSize =
-  32
+parseHelp :: Int -> Word64 -> Parser Id
+parseHelp index accumulated =
+    if index == 8 then
+        return $ Id accumulated
 
-options :: Options
-options =
-  Options
-    { iterations = 1
-    , memory = 64*1024
-    , parallelism = 4
-    , variant = Argon2id
-    , version = Version13
-    }
+    else
+    do
+    byte <- fmap fromIntegral anyWord8
+    parseHelp
+        (index + 1)
+        (accumulated + byte `shiftL` (8 * index))
 
-salt :: ByteString
-salt =
-    pack [ 12, 241, 34, 209, 144, 189, 14, 8, 148, 146, 238, 124, 116, 62, 174, 93, 228, 250, 157, 37, 95, 97, 203, 130, 85, 31, 12, 6, 112, 107, 39, 247 ]
-
-parseHttp :: Parser Http
-parseHttp =
-  do
-  bytes <- take rawSize
-  case hash options bytes salt hashSize of
-    CryptoPassed hashed ->
-      return $ Http hashed
-
-    CryptoFailed _ ->
-      fail "hashing the ID failed"
-
-parseDb :: Parser Db
-parseDb =
-  do
-  bytes <- take hashSize
-  return $ Db bytes
+encode :: Id -> ByteString
+encode (Id id) =
+    pack $
+    map (fromIntegral :: Word64 -> Word8) $
+    map (.&. 0xFF) $
+    map (\shift -> id `shiftR` shift) $
+    map (* 8) $
+    take 8 [0..]

@@ -1,49 +1,29 @@
-module UserData (Http, Db, parseDb, parseHttp, encodeHttp, encodeDb) where
+module UserData (UserData, parse, encode) where
 
-import qualified Data.ByteString as Bytes
-import qualified Data.Attoparsec.ByteString as Parsec
-import qualified Data.Bits as Bits
-import Prelude (return, fromIntegral, (*), (<>), ($), (+), fail, (>))
+import Data.ByteString (ByteString, pack, length)
+import Data.Attoparsec.ByteString (anyWord8, take, Parser)
+import Data.Bits ((.&.), shiftR)
+import Prelude (return, fromIntegral, (*), (<>), ($), (+))
 
-newtype Http
-    = Http Bytes.ByteString
+newtype UserData
+    = UserData ByteString
 
-newtype Db
-    = Db Bytes.ByteString
-
-encodeHttp :: Http -> Bytes.ByteString
-encodeHttp (Http bytes) =
-    encode bytes
-
-encodeDb :: Db -> Bytes.ByteString
-encodeDb (Db bytes) =
-    encode bytes
-
-encode :: Bytes.ByteString -> Bytes.ByteString
-encode bytes =
+encode :: UserData -> ByteString
+encode (UserData bytes) =
     let
-        length = Bytes.length bytes
+        length' = length bytes
     in
-    Bytes.pack
-    [ fromIntegral $ length Bits..&. 0xff
-    , fromIntegral $ (Bits.shiftR length 8) Bits..&. 0xff
+    pack
+    [ fromIntegral $ length' .&. 0xff
+    , fromIntegral $ (shiftR length' 8) .&. 0xff
     ]
         <> bytes
 
-parseHttp :: Parsec.Parser Http
-parseHttp =
+parse :: Parser UserData
+parse =
     do
-    bytes <- Parsec.takeByteString
-    if Bytes.length bytes > 2 `Bits.shiftL` 16 then
-        fail "user data from HTTP is too long"
-    else
-        return $ Http bytes
-
-parseDb :: Parsec.Parser Db
-parseDb =
-    do
-    b0 <- Parsec.anyWord8
-    b1 <- Parsec.anyWord8
-    let length = fromIntegral b0 + 256 * fromIntegral b1
-    bytes <- Parsec.take length
-    return (Db bytes)
+    b0 <- anyWord8
+    b1 <- anyWord8
+    let length' = fromIntegral b0 + 256 * fromIntegral b1
+    bytes <- take length'
+    return (UserData bytes)

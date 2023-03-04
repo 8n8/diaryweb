@@ -1,44 +1,17 @@
-module TableId (Http, Db, parseDb, parseHttp, encodeDb, encodeHttp, Salt, makeSalt) where
+module TableId (TableId, parse, encode) where
 
 import qualified Data.ByteString as Bytes
-import qualified Data.Attoparsec.ByteString as Parsec
-import qualified Crypto.Random as Random
+import Data.Attoparsec.ByteString (Parser)
+import qualified Id
+import Prelude (fmap)
 
-newtype Http
-    = Http Bytes.ByteString
+newtype TableId
+    = TableId Id.Id
 
-newtype Salt
-    = Salt Bytes.ByteString
+parse :: Parser TableId
+parse =
+    fmap TableId Id.parse
 
-makeSalt :: IO Salt
-makeSalt =
-  do
-  bytes <- Random.getRandomBytes
-  return $ Salt bytes
-
-encodeHttp :: Http -> Bytes.ByteString
-encodeHttp (Http bytes) =
-    bytes
-
-newtype Db
-    = Db Bytes.ByteString
-
-encodeDb :: Db -> Bytes.ByteString
-encodeDb (Db bytes) =
-    bytes
-
-size :: Int
-size =
-    12
-
-parseHttp :: Parsec.Parser Http
-parseHttp =
-    do
-    bytes <- Parsec.take size
-    return $ Http bytes
-
-parseDb :: Parsec.Parser Db
-parseDb =
-    do
-    bytes <- Parsec.take size
-    return $ Db bytes
+encode :: TableId -> Bytes.ByteString
+encode (TableId id) =
+    Id.encode id

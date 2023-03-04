@@ -37,7 +37,8 @@ cases =
           R.Request
             { R.path = ["save"],
               R.body = tableId <> rowId <> "Hi",
-              R.db = ""
+              R.db = "",
+              R.headers = [("Cookie", "session=
             },
         response =
           T.Response

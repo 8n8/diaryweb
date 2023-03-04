@@ -3,8 +3,8 @@ module Diary (diary) where
 import qualified Request
 import qualified Response
 import qualified UserData
-import qualified RowId
-import qualified TableId
+import RowId
+import TableId
 
 diary :: Request.Request -> Response.Response
 diary request =
@@ -22,7 +22,7 @@ parseRequest =
     rowId <- RowId.parseHttp
 
 data Request
-    = Save TableId.Http RowId.Http UserData.Http
+    = Save TableId SessionSecret UserData 
 
 handleValidRequest :: Request -> Response.Response
 handleValidRequest parsed =
