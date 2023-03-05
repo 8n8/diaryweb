@@ -1,17 +1,19 @@
-module UserSecret (Http, parseHttp, parseDb, Db) where
+module UserSecret (UserSecret, parseHttp, parseDb, encode) where
 
-import Data.ByteString (ByteString)
-import Salt (Salt, encode)
-import Crypto.Error (CryptoFailable(..))
-import Crypto.KDF.Argon2
-    (version, variant, parallelism, memory, iterations, Options(..)
-    , hash, Version(..), Variant(..)
-    )
+import qualified Crypto.Error
+import qualified Crypto.KDF.Argon2 as Argon2
 import Data.Attoparsec.ByteString (Parser, take)
-import Prelude (Int, fail, ($), return, (*))
+import Data.ByteString (ByteString)
+import Salt (Salt)
+import qualified Salt
+import Prelude (Int, fail, return, ($), (*))
 
-newtype Http
-  = Http ByteString
+newtype UserSecret
+  = UserSecret ByteString
+
+encode :: UserSecret -> ByteString
+encode (UserSecret raw) =
+  raw
 
 rawSize :: Int
 rawSize =
@@ -21,29 +23,28 @@ hashSize :: Int
 hashSize =
   32
 
-options :: Options
+options :: Argon2.Options
 options =
-  Options
-    { iterations = 1
-    , memory = 64*1024
-    , parallelism = 4
-    , variant = Argon2id
-    , version = Version13
+  Argon2.Options
+    { Argon2.iterations = 1,
+      Argon2.memory = 64 * 1024,
+      Argon2.parallelism = 4,
+      Argon2.variant = Argon2.Argon2id,
+      Argon2.version = Argon2.Version13
     }
 
-parseHttp :: Salt -> Parser Http
+parseHttp :: Salt -> Parser UserSecret
 parseHttp salt =
   do
-  bytes <- take rawSize
-  case hash options bytes (Salt.encode salt) hashSize of
-    CryptoPassed hashed ->
-      return $ Http hashed
+    bytes <- take rawSize
+    case Argon2.hash options bytes (Salt.encode salt) hashSize of
+      Crypto.Error.CryptoPassed hashed ->
+        return $ UserSecret hashed
+      Crypto.Error.CryptoFailed _ ->
+        fail "hashing the ID failed"
 
-    CryptoFailed _ ->
-      fail "hashing the ID failed"
-
-parseDb :: Parser Db
+parseDb :: Parser UserSecret
 parseDb =
   do
-  bytes <- take hashSize
-  return $ Db bytes
+    bytes <- take hashSize
+    return $ UserSecret bytes

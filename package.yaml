@@ -10,7 +10,6 @@ ghc-options:
 - -Wno-implicit-prelude
 - -Wno-missing-safe-haskell-mode
 - -Wno-safe
-- -Wno-missing-import-lists
 - -Wno-missing-kind-signatures
 - -Wno-prepositive-qualified-module
 - -Wno-missing-deriving-strategies
@@ -24,9 +23,11 @@ library:
   source-dirs: src
   dependencies:
   - bytestring
-  - text
   - attoparsec
   - cryptonite
+  - text
+  - containers
+  - memory
 
 executables:
   diaryweb-exe:
@@ -36,8 +37,6 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
-    dependencies:
-    - diaryweb
 
 tests:
   diaryweb-test:
@@ -52,3 +51,5 @@ tests:
     - tasty
     - tasty-hunit
     - diaryweb
+    - cryptonite
+    - memory

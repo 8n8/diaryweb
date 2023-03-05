@@ -1,34 +1,26 @@
-module RowId (Http, Db, parseDb, parseHttp, encodeDb, encodeHttp) where
+module RowId (RowId, parse, encode) where
 
-import qualified Data.ByteString as Bytes
-import qualified Data.Attoparsec.ByteString as Parsec
+import Data.Attoparsec.ByteString (Parser)
+import Data.ByteString (ByteString)
+import Id (Id)
+import qualified Id
+import Prelude (Eq, Ord, compare, fmap, (==))
 
-newtype Http
-    = Http Bytes.ByteString
+newtype RowId
+  = RowId Id
 
-encodeHttp :: Http -> Bytes.ByteString
-encodeHttp (Http bytes) =
-    bytes
+instance Eq RowId where
+  (==) (RowId a) (RowId b) =
+    a == b
 
-newtype Db
-    = Db Bytes.ByteString
+instance Ord RowId where
+  compare (RowId a) (RowId b) =
+    compare a b
 
-encodeDb :: Db -> Bytes.ByteString
-encodeDb (Db bytes) =
-    bytes
+encode :: RowId -> ByteString
+encode (RowId id) =
+  Id.encode id
 
-size :: Int
-size =
-    12
-
-parseHttp :: Parsec.Parser Http
-parseHttp =
-    do
-    bytes <- Parsec.take size
-    return $ Http bytes
-
-parseDb :: Parsec.Parser Db
-parseDb =
-    do
-    bytes <- Parsec.take size
-    return $ Db bytes
+parse :: Parser RowId
+parse =
+  fmap RowId Id.parse

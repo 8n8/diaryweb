@@ -1,37 +1,26 @@
 module Id (Id, parse, encode) where
 
-import Data.Word (Word8, Word64)
-import Data.ByteString (ByteString, pack)
-import Data.Bits ((.&.), shiftR, shiftL)
-import Data.Attoparsec.ByteString (Parser, anyWord8)
-import Prelude
-    (Int, (==)
-    , (*), map, ($), fromIntegral, (+), return, fmap, take)
+import Data.Attoparsec.ByteString (Parser)
+import Data.ByteString (ByteString)
+import Data.Word (Word64)
+import qualified U64
+import Prelude (Eq, Ord, compare, fmap, (==))
 
 newtype Id
-    = Id Word64
+  = Id Word64
+
+instance Eq Id where
+  (==) (Id a) (Id b) =
+    a == b
+
+instance Ord Id where
+  compare (Id a) (Id b) =
+    compare a b
 
 parse :: Parser Id
 parse =
-    parseHelp 0 0
-
-parseHelp :: Int -> Word64 -> Parser Id
-parseHelp index accumulated =
-    if index == 8 then
-        return $ Id accumulated
-
-    else
-    do
-    byte <- fmap fromIntegral anyWord8
-    parseHelp
-        (index + 1)
-        (accumulated + byte `shiftL` (8 * index))
+  fmap Id U64.parse
 
 encode :: Id -> ByteString
 encode (Id id) =
-    pack $
-    map (fromIntegral :: Word64 -> Word8) $
-    map (.&. 0xFF) $
-    map (\shift -> id `shiftR` shift) $
-    map (* 8) $
-    take 8 [0..]
+  U64.encode id
