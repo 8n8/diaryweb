@@ -161,6 +161,14 @@ saveIndicator :: ByteString
 saveIndicator =
   Strict.singleton 0
 
+fetchTableIndicator :: ByteString
+fetchTableIndicator =
+  Strict.singleton 1
+
+fetchedTableIndicator :: ByteString
+fetchedTableIndicator =
+  Strict.singleton 2
+
 cases :: [Case]
 cases =
   [ Case
@@ -178,6 +186,56 @@ cases =
         dbKey = RawKey databaseKey,
         randomBytes = RandomBytes (rowSalt <> tableSalt <> rawNonce),
         bodyOut = RawBody.ok,
+        dbOut =
+          RawDb $
+            mconcat
+              [ Strict.pack [0, 0, 0, 0, 0, 0, 0, 0], -- next available unique
+                tableId,
+                tableSalt,
+                hashedTableSecret,
+                rowId,
+                rowSalt,
+                hashedRowSecret,
+                Strict.pack [30, 0], -- size of encrypted user data
+                encryptedUserData
+              ]
+      },
+    Case
+      { description = "fetch table from database",
+        bodyIn =
+          RawBody $
+            Lazy.fromStrict $
+              mconcat
+                [ fetchTableIndicator,
+                  tableId,
+                  tableSecret
+                ],
+        dbIn =
+          RawDb $
+            mconcat
+              [ Strict.pack [0, 0, 0, 0, 0, 0, 0, 0], -- next available unique
+                tableId,
+                tableSalt,
+                hashedTableSecret,
+                rowId,
+                rowSalt,
+                hashedRowSecret,
+                Strict.pack [30, 0], -- size of encrypted user data
+                encryptedUserData
+              ],
+        dbKey = RawKey databaseKey,
+        randomBytes = RandomBytes (rowSalt <> tableSalt <> rawNonce),
+        bodyOut =
+          RawBody $
+            Lazy.fromStrict $
+              mconcat
+                [ fetchedTableIndicator,
+                  tableId,
+                  rowId,
+                  rowSecret,
+                  Strict.pack [2, 0],
+                  "Hi"
+                ],
         dbOut =
           RawDb $
             mconcat
