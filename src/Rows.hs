@@ -5,7 +5,6 @@ import qualified Data.Attoparsec.ByteString as Parsec
 import Data.ByteString (ByteString)
 import Data.Map (Map)
 import qualified Data.Map as Map
-import Debug.Trace (trace)
 import Row (Row)
 import qualified Row
 import RowId (RowId)
@@ -15,9 +14,7 @@ newtype Rows
 
 encode :: Rows -> ByteString
 encode (Rows rows) =
-  let encoded = mconcat $ map (\(rowId, row) -> Row.encode rowId row) $ Map.toList rows
-   in trace ("rows: " <> show rows) $
-        trace ("encoded: " <> show encoded) encoded
+  mconcat $ map (\(rowId, row) -> Row.encode rowId row) $ Map.toList rows
 
 insert :: RowId -> Row -> Rows -> Rows
 insert rowId row (Rows rows) =

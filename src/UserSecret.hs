@@ -22,7 +22,7 @@ rawSize =
 
 hashSize :: Int
 hashSize =
-  32
+  16
 
 options :: Argon2.Options
 options =

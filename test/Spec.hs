@@ -132,10 +132,9 @@ encrypt plaintext nonceBytes key =
   do
     nonce <- Cipher.nonce12 nonceBytes
     state0 <- Cipher.initialize key nonce
-    let state1 =
-          Cipher.appendAAD authenticatedData state0
-        (ciphertext, state2) = Cipher.encrypt plaintext state1
-        state3 = Cipher.finalizeAAD state2
+    let state1 = Cipher.appendAAD authenticatedData state0
+        state2 = Cipher.finalizeAAD state1
+        (ciphertext, state3) = Cipher.encrypt plaintext state2
         authTag = Cipher.finalize state3
     return $ nonceBytes <> ByteArray.convert authTag <> ciphertext
 
