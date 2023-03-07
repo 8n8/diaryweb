@@ -1,6 +1,6 @@
 module Db (Db, parse, insertRow, encode) where
 
-import Data.Attoparsec.ByteString (Parser)
+import Data.Attoparsec.ByteString (Parser, choice, endOfInput)
 import Data.ByteString (ByteString)
 import Row (Row (Row))
 import RowId (RowId)
@@ -51,7 +51,17 @@ insertRow
 
 parse :: Parser Db
 parse =
+  choice
+    [ do
+        _ <- endOfInput
+        return $ Db Unique.first Rows.empty,
+      parseNonEmpty
+    ]
+
+parseNonEmpty :: Parser Db
+parseNonEmpty =
   do
     unique <- Unique.parse
     rows <- Rows.parse
+    _ <- endOfInput
     return $ Db unique rows

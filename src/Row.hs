@@ -19,6 +19,7 @@ import qualified UserData
 
 data Row
   = Row TableId TableSalt TableSecret RowSalt RowSecret UserData
+  deriving (Show)
 
 encode :: RowId -> Row -> ByteString
 encode rowId (Row tableId tableSalt tableSecret rowSalt rowSecret userData) =

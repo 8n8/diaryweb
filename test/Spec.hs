@@ -10,6 +10,7 @@ import qualified Data.ByteString.Lazy as Lazy
 import Diary (diary)
 import RandomBytes (RandomBytes (RandomBytes))
 import RawBody (RawBody (RawBody))
+import qualified RawBody
 import RawDb (RawDb (RawDb))
 import RawKey (RawKey (RawKey))
 import Test.Tasty (TestTree, defaultMain, testGroup)
@@ -177,7 +178,7 @@ cases =
         dbIn = RawDb "",
         dbKey = RawKey databaseKey,
         randomBytes = RandomBytes (rowSalt <> tableSalt <> rawNonce),
-        bodyOut = RawBody "",
+        bodyOut = RawBody.ok,
         dbOut =
           RawDb $
             mconcat

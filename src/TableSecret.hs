@@ -9,6 +9,7 @@ import qualified UserSecret
 
 newtype TableSecret
   = TableSecret UserSecret
+  deriving (Show)
 
 encode :: TableSecret -> ByteString
 encode (TableSecret secret) =

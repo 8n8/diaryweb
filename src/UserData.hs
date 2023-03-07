@@ -13,6 +13,7 @@ import qualified Key
 import qualified Nonce
 import Prelude
   ( Int,
+    Show,
     fail,
     fromIntegral,
     mconcat,
@@ -27,6 +28,7 @@ import Prelude
 
 newtype UserData
   = UserData ByteString
+  deriving (Show)
 
 encodeDb :: UserData -> ByteString
 encodeDb (UserData bytes) =

@@ -74,8 +74,8 @@ parseRandom (RandomBytes rawRandom) =
 parseRandomHelp :: Parser (TableSalt, RowSalt, Nonce)
 parseRandomHelp =
   do
-    tableSalt <- TableSalt.parse
     rowSalt <- RowSalt.parse
+    tableSalt <- TableSalt.parse
     nonce <- Nonce.parse
     endOfInput
     return (tableSalt, rowSalt, nonce)

@@ -7,6 +7,7 @@ import qualified Salt
 
 newtype TableSalt
   = TableSalt Salt
+  deriving (Show)
 
 unwrap :: TableSalt -> Salt
 unwrap (TableSalt salt) =

@@ -6,10 +6,11 @@ import Data.Attoparsec.ByteString (Parser, take)
 import Data.ByteString (ByteString)
 import Salt (Salt)
 import qualified Salt
-import Prelude (Int, fail, return, ($), (*))
+import Prelude (Int, Show, fail, return, ($), (*))
 
 newtype UserSecret
   = UserSecret ByteString
+  deriving (Show)
 
 encode :: UserSecret -> ByteString
 encode (UserSecret raw) =

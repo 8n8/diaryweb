@@ -1,4 +1,4 @@
-module Unique (Unique, parse, encode) where
+module Unique (Unique, parse, encode, first) where
 
 import Data.Attoparsec.ByteString (Parser)
 import Data.ByteString (ByteString)
@@ -15,3 +15,7 @@ parse =
 encode :: Unique -> ByteString
 encode (Unique raw) =
   U64.encode raw
+
+first :: Unique
+first =
+  Unique 0
