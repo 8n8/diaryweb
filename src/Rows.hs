@@ -8,17 +8,18 @@ import qualified Data.Map as Map
 import Row (Row)
 import qualified Row
 import RowId (RowId)
+import RowSecret (RowSecret)
 
 newtype Rows
-  = Rows (Map RowId Row)
+  = Rows (Map (RowId, RowSecret) Row)
 
 encode :: Rows -> ByteString
 encode (Rows rows) =
-  mconcat $ map (\(rowId, row) -> Row.encode rowId row) $ Map.toList rows
+  mconcat $ map (\((rowId, rowSecret), row) -> Row.encode rowId rowSecret row) $ Map.toList rows
 
-insert :: RowId -> Row -> Rows -> Rows
-insert rowId row (Rows rows) =
-  Rows (Map.insert rowId row rows)
+insert :: RowId -> RowSecret -> Row -> Rows -> Rows
+insert rowId rowSecret row (Rows rows) =
+  Rows (Map.insert (rowId, rowSecret) row rows)
 
 parse :: Parser Rows
 parse =

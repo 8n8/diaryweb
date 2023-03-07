@@ -45,7 +45,8 @@ insertRow
       unique
       ( Rows.insert
           rowId
-          (Row tableId tableSalt tableSecret rowSalt rowSecret userData)
+          rowSecret
+          (Row tableId tableSalt tableSecret rowSalt userData)
           rows
       )
 

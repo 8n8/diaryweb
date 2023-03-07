@@ -9,7 +9,7 @@ import qualified UserSecret
 
 newtype RowSecret
   = RowSecret UserSecret
-  deriving (Show)
+  deriving (Show, Ord, Eq)
 
 encode :: RowSecret -> ByteString
 encode (RowSecret secret) =

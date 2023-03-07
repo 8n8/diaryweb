@@ -18,11 +18,11 @@ import UserData (UserData)
 import qualified UserData
 
 data Row
-  = Row TableId TableSalt TableSecret RowSalt RowSecret UserData
+  = Row TableId TableSalt TableSecret RowSalt UserData
   deriving (Show)
 
-encode :: RowId -> Row -> ByteString
-encode rowId (Row tableId tableSalt tableSecret rowSalt rowSecret userData) =
+encode :: RowId -> RowSecret -> Row -> ByteString
+encode rowId rowSecret (Row tableId tableSalt tableSecret rowSalt userData) =
   mconcat
     [ TableId.encode tableId,
       TableSalt.encode tableSalt,
@@ -33,7 +33,7 @@ encode rowId (Row tableId tableSalt tableSecret rowSalt rowSecret userData) =
       UserData.encodeDb userData
     ]
 
-parse :: Parser (RowId, Row)
+parse :: Parser ((RowId, RowSecret), Row)
 parse =
   do
     tableId <- TableId.parse
@@ -44,6 +44,6 @@ parse =
     rowSecret <- RowSecret.parseDb
     userData <- UserData.parseDb
     return $
-      ( rowId,
-        Row tableId tableSalt tableSecret rowSalt rowSecret userData
+      ( (rowId, rowSecret),
+        Row tableId tableSalt tableSecret rowSalt userData
       )
