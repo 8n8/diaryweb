@@ -4,11 +4,11 @@ import Data.Attoparsec.ByteString (Parser)
 import qualified Data.ByteString as Bytes
 import Id (Id)
 import qualified Id
-import Prelude (Show, fmap)
+import Prelude (Show, fmap, Eq)
 
 newtype TableId
   = TableId Id
-  deriving (Show)
+  deriving (Show, Eq)
 
 parse :: Parser TableId
 parse =

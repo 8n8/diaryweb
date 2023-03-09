@@ -8,10 +8,19 @@ import qualified Db
 import qualified Key
 import qualified Nonce
 import RandomBytes (RandomBytes (RandomBytes))
-import RawBody (RawBody)
+import Data.ByteString (ByteString)
+import RawBody (RawBody(RawBody))
 import qualified RawBody
+import TableSecret (TableSecret)
+import RawBody (RawBody)
+import qualified Row
+import Row (Row)
+import RowSecret (RowSecret)
+import RowId (RowId)
 import RawDb (RawDb (RawDb))
+import RequestFetchTable (RequestFetchTable)
 import qualified RawDb
+import qualified RawTableSecret
 import RawKey (RawKey)
 import qualified RawKey
 import Request (Request)
@@ -22,6 +31,8 @@ import RowSalt (RowSalt)
 import qualified RowSalt
 import TableSalt (TableSalt)
 import qualified TableSalt
+import qualified RequestFetchTable
+import qualified TableSecret
 
 diary :: RandomBytes -> RawKey -> RawBody -> RawDb -> (RawBody, RawDb)
 diary randomBytes rawKey rawBody rawDb =
@@ -41,6 +52,64 @@ handleValidRequest request db tableSalt rowSalt =
   case request of
     Request.Save save ->
       handleSaveRequest save tableSalt rowSalt db
+
+    Request.FetchTable fetchTable ->
+      handleFetchTable fetchTable db
+
+handleFetchTable :: RequestFetchTable -> Db -> (RawBody, RawDb)
+handleFetchTable request db =
+    case Db.getTable (RequestFetchTable.tableId request) db of
+        [] ->
+            (RawBody.userError, RawDb $ Db.encode db)
+
+        top : remainder ->
+            let
+                tableSalt :: TableSalt
+                tableSalt = 
+                    Row.getTableSalt (thd top)
+
+                rawTableSecret :: ByteString
+                rawTableSecret =
+                    RawTableSecret.unwrap $
+                      RequestFetchTable.rawTableSecret request
+
+                tableSecretParser :: Parser TableSecret
+                tableSecretParser =
+                    TableSecret.parseHttp tableSalt
+            in
+            case parseOnly tableSecretParser rawTableSecret of
+            Left _ ->
+                (RawBody.userError, RawDb $ Db.encode db)
+
+            Right requestTableSecret ->
+                if requestTableSecret == Row.getTableSecret top then
+                    ( RawBody $
+                       mconcat
+                        [ RawBody.fetchedTable
+                        , encodeRows (top : remainder)
+                        ]
+                    , RawDb $ Db.encode db
+                    )
+
+                else
+                    (RawBody.userError, RawDb $ Db.encode db)
+
+
+encodeRows :: [(RowId, RowSecret, Row)] -> Lazy.ByteString
+encodeRows rows =
+    mconcat $ map encodeRow rows
+    
+encodeRow :: (RowId, RowSecret, Row) -> Lazy.ByteString
+encodeRow (rowId, rowSecret, row) =
+    mconcat
+    [ RowId.encode rowId
+    , RowSecret.encode rowSecret
+    , Row.encodeHttp row
+    ]
+
+thd :: (a, b, c) -> c
+thd (_, _, c) =
+    c
 
 handleSaveRequest ::
   RequestSave ->

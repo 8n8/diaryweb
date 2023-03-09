@@ -1,4 +1,4 @@
-module Db (Db, parse, insertRow, encode) where
+module Db (Db, parse, insertRow, encode, getTable) where
 
 import Data.Attoparsec.ByteString (Parser, choice, endOfInput)
 import Data.ByteString (ByteString)
@@ -17,6 +17,10 @@ import UserData (UserData)
 
 data Db
   = Db Unique Rows
+
+getTable :: TableId -> Db -> [(RowId, RowSecret, Row)]
+getTable tableId (Db _ rows) =
+    Rows.getTable tableId rows
 
 encode :: Db -> ByteString
 encode (Db unique rows) =

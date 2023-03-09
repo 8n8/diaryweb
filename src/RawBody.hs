@@ -1,4 +1,6 @@
-module RawBody (ok, RawBody (..), get, userError, serverError) where
+module RawBody
+    (fetchedTable
+    , ok, RawBody (..), get, userError, serverError) where
 
 import Data.ByteString.Lazy (ByteString, singleton, unpack)
 import Prelude (Eq, Ord, Show, mconcat, show, ($))
@@ -30,3 +32,7 @@ ok =
 get :: RawBody -> ByteString
 get (RawBody raw) =
   raw
+
+fetchedTable :: ByteString
+fetchedTable =
+    singleton 2

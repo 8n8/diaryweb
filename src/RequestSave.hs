@@ -1,4 +1,6 @@
-module RequestSave (RequestSave, tableId, tableSecret, rowId, rowSecret, userData, parse) where
+module RequestSave
+    (RequestSave
+    , tableId, tableSecret, rowId, rowSecret, userData, parse) where
 
 import Crypto.Cipher.ChaChaPoly1305 (Nonce)
 import Data.Attoparsec.ByteString (Parser, word8)

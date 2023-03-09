@@ -1,4 +1,7 @@
-module Row (Row (..), parse, encode) where
+module Row
+    (Row (..)
+    , getTableSecret
+    , parse, encodeDb, isInTable, getTableSalt) where
 
 import Data.Attoparsec.ByteString (Parser)
 import Data.ByteString (ByteString)
@@ -21,8 +24,20 @@ data Row
   = Row TableId TableSalt TableSecret RowSalt UserData
   deriving (Show)
 
-encode :: RowId -> RowSecret -> Row -> ByteString
-encode rowId rowSecret (Row tableId tableSalt tableSecret rowSalt userData) =
+getTableSecret :: Row -> TableSecret
+getTableSecret (Row _ _ tableSecret _ _) =
+    tableSecret
+
+getTableSalt :: Row -> TableSalt
+getTableSalt (Row _ tableSalt _ _ _) =
+    tableSalt
+
+isInTable :: TableId -> Row -> Bool
+isInTable wanted (Row got _ _ _ _) =
+    wanted == got
+
+encodeDb :: RowId -> RowSecret -> Row -> ByteString
+encodeDb rowId rowSecret (Row tableId tableSalt tableSecret rowSalt userData) =
   mconcat
     [ TableId.encode tableId,
       TableSalt.encode tableSalt,
@@ -32,6 +47,12 @@ encode rowId rowSecret (Row tableId tableSalt tableSecret rowSalt userData) =
       RowSecret.encode rowSecret,
       UserData.encodeDb userData
     ]
+
+encodeHttp :: Key -> RowId -> RowSecret -> Row -> ByteString
+encodeHttp key rowId _ (Row tableId _ tableSecret _ userData) =
+    mconcat
+    [ RowId.encode
+    , RowSecret.
 
 parse :: Parser ((RowId, RowSecret), Row)
 parse =
