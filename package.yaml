@@ -26,7 +26,6 @@ library:
   - bytestring
   - attoparsec
   - cryptonite
-  - text
   - containers
   - memory
 
