@@ -1,4 +1,12 @@
-module Indicator (create, created, userError, serverError) where
+module Indicator
+  ( create,
+    created,
+    userError,
+    serverError,
+    got,
+    get,
+  )
+where
 
 import Data.Word (Word8)
 import Prelude ()
@@ -18,3 +26,11 @@ userError =
 serverError :: Word8
 serverError =
   3
+
+got :: Word8
+got =
+  4
+
+get :: Word8
+get =
+  5

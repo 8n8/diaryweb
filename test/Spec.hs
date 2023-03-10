@@ -53,5 +53,22 @@ cases =
                 Lazy.fromStrict capacity
               ],
         dbOut = RawDb $ mconcat [capacity, Strict.pack [2, 0], "Hi"]
+      },
+    Case
+      { description = "get",
+        bodyIn =
+          RawBody $
+            Lazy.fromStrict $
+              Strict.singleton Indicator.get <> capacity,
+        dbIn = RawDb $ mconcat [capacity, Strict.pack [2, 0], "Hi"],
+        bodyOut =
+          RawBody $
+            mconcat
+              [ Lazy.singleton Indicator.got,
+                Lazy.fromStrict capacity,
+                Lazy.pack [2, 0],
+                "Hi"
+              ],
+        dbOut = RawDb $ mconcat [capacity, Strict.pack [2, 0], "Hi"]
       }
   ]

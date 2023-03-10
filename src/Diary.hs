@@ -1,8 +1,10 @@
 module Diary (diary) where
 
+import Capacity (Capacity)
 import qualified Capacity
 import Data.Attoparsec.ByteString (parseOnly)
 import qualified Data.ByteString.Lazy as Lazy
+import qualified Data.Set as Set
 import Db (Db)
 import qualified Db
 import qualified Indicator
@@ -28,6 +30,8 @@ handleValidRequest request db =
   case request of
     Request.Create row ->
       handleSaveRequest row db
+    Request.Get capacity ->
+      (handleGetRequest capacity db, RawDb $ Db.encode db)
 
 handleSaveRequest :: Row -> Db -> (RawBody, RawDb)
 handleSaveRequest row db =
@@ -38,6 +42,18 @@ handleSaveRequest row db =
         ],
     RawDb $ Db.encode $ Db.insert row db
   )
+
+handleGetRequest :: Capacity -> Db -> RawBody
+handleGetRequest capacity db =
+  RawBody $
+    mconcat
+      [ Lazy.singleton Indicator.got,
+        Lazy.fromStrict $
+          mconcat $
+            map Row.encode $
+              Set.toList $
+                Db.get capacity db
+      ]
 
 parse :: RawBody -> RawDb -> Either RawBody (Request, Db)
 parse rawBody rawDb =
