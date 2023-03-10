@@ -23,5 +23,5 @@ parse :: Parser Row
 parse =
   do
     capacity_ <- Capacity.parse
-    userData <- UserData.parseDb
+    userData <- UserData.parse
     return $ Row capacity_ userData
