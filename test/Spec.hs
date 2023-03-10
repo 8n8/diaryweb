@@ -35,7 +35,7 @@ capacity =
 cases :: [Case]
 cases =
   [ Case
-      { description = "create an item",
+      { description = "create",
         bodyIn =
           RawBody $
             Lazy.fromStrict $
