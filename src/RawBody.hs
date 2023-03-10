@@ -1,8 +1,14 @@
 module RawBody
-    (fetchedTable
-    , ok, RawBody (..), get, userError, serverError) where
+  ( fetchedTable,
+    userError,
+    serverError,
+    RawBody (..),
+    get,
+  )
+where
 
 import Data.ByteString.Lazy (ByteString, singleton, unpack)
+import qualified Indicator
 import Prelude (Eq, Ord, Show, mconcat, show, ($))
 
 newtype RawBody
@@ -17,17 +23,13 @@ instance Show RawBody where
         ")"
       ]
 
-userError :: RawBody
-userError =
-  RawBody (singleton 0)
-
 serverError :: RawBody
 serverError =
-  RawBody (singleton 1)
+  RawBody (singleton Indicator.serverError)
 
-ok :: RawBody
-ok =
-  RawBody (singleton 2)
+userError :: RawBody
+userError =
+  RawBody (singleton Indicator.userError)
 
 get :: RawBody -> ByteString
 get (RawBody raw) =
@@ -35,4 +37,4 @@ get (RawBody raw) =
 
 fetchedTable :: ByteString
 fetchedTable =
-    singleton 2
+  singleton 2

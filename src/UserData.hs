@@ -1,4 +1,4 @@
-module UserData (UserData, parseDb, parseHttp, encodeDb) where
+module UserData (UserData, parseDb, parseHttp, encode) where
 
 import Crypto.Cipher.ChaChaPoly1305 (Nonce)
 import qualified Crypto.Cipher.ChaChaPoly1305 as Cipher
@@ -12,7 +12,9 @@ import Key (Key)
 import qualified Key
 import qualified Nonce
 import Prelude
-  ( Int,
+  ( Eq,
+    Int,
+    Ord,
     Show,
     fail,
     fromIntegral,
@@ -28,10 +30,10 @@ import Prelude
 
 newtype UserData
   = UserData ByteString
-  deriving (Show)
+  deriving (Show, Eq, Ord)
 
-encodeDb :: UserData -> ByteString
-encodeDb (UserData bytes) =
+encode :: UserData -> ByteString
+encode (UserData bytes) =
   let length' = ByteString.length bytes
    in ByteString.pack
         [ fromIntegral $ length' .&. 0xff,

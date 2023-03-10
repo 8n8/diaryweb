@@ -1,26 +1,21 @@
 module Request (Request (..), parse) where
 
-import Crypto.Cipher.ChaChaPoly1305 (Nonce)
-import Data.Attoparsec.ByteString (Parser, choice, endOfInput)
-import Key (Key)
-import RequestSave (RequestSave)
-import RequestFetchTable (RequestFetchTable)
-import qualified RequestFetchTable
-import qualified RequestSave
-import RowSalt (RowSalt)
-import TableSalt (TableSalt)
+import Data.Attoparsec.ByteString (Parser, choice, endOfInput, word8)
+import qualified Indicator
+import Row (Row)
+import qualified Row
 
 data Request
-  = Save RequestSave
-  | FetchTable RequestFetchTable
+  = Create Row
 
-parse :: Key -> Nonce -> TableSalt -> RowSalt -> Parser Request
-parse key nonce tableSalt rowSalt =
+parse :: Parser Request
+parse =
   do
     request <-
       choice
-        [ fmap Save (RequestSave.parse key nonce tableSalt rowSalt)
-        , fmap FetchTable RequestFetchTable.parse
+        [ do
+            _ <- word8 Indicator.create
+            fmap Create Row.parse
         ]
 
     endOfInput

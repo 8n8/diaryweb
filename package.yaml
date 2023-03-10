@@ -15,6 +15,7 @@ ghc-options:
 - -Wno-missing-deriving-strategies
 - -Wno-unsafe
 - -Wno-monomorphism-restriction
+- -Wno-missing-home-modules
 
 default-extensions:
 - OverloadedStrings
@@ -51,5 +52,3 @@ tests:
     - tasty
     - tasty-hunit
     - diaryweb
-    - cryptonite
-    - memory

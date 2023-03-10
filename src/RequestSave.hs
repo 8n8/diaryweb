@@ -1,9 +1,17 @@
 module RequestSave
-    (RequestSave
-    , tableId, tableSecret, rowId, rowSecret, userData, parse) where
+  ( RequestSave,
+    tableId,
+    tableSecret,
+    rowId,
+    rowSecret,
+    userData,
+    parse,
+  )
+where
 
 import Crypto.Cipher.ChaChaPoly1305 (Nonce)
 import Data.Attoparsec.ByteString (Parser, word8)
+import qualified Indicator
 import Key (Key)
 import RowId (RowId)
 import qualified RowId
@@ -29,7 +37,7 @@ data RequestSave = RequestSave
 parse :: Key -> Nonce -> TableSalt -> RowSalt -> Parser RequestSave
 parse key nonce tableSalt rowSalt =
   do
-    _ <- word8 0
+    _ <- word8 Indicator.create
     tableId_ <- TableId.parse
     tableSecret_ <- TableSecret.parseHttp tableSalt
     rowId_ <- RowId.parse

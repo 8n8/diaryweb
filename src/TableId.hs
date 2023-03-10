@@ -4,7 +4,7 @@ import Data.Attoparsec.ByteString (Parser)
 import qualified Data.ByteString as Bytes
 import Id (Id)
 import qualified Id
-import Prelude (Show, fmap, Eq)
+import Prelude (Eq, Show, fmap)
 
 newtype TableId
   = TableId Id

@@ -1,70 +1,27 @@
-module Row
-    (Row (..)
-    , getTableSecret
-    , parse, encodeDb, isInTable, getTableSalt) where
+module Row (Row (..), parse, encode, capacity) where
 
+import Capacity (Capacity)
+import qualified Capacity
 import Data.Attoparsec.ByteString (Parser)
 import Data.ByteString (ByteString)
-import RowId (RowId)
-import qualified RowId
-import RowSalt (RowSalt)
-import qualified RowSalt
-import RowSecret (RowSecret)
-import qualified RowSecret
-import TableId (TableId)
-import qualified TableId
-import TableSalt (TableSalt)
-import qualified TableSalt
-import TableSecret (TableSecret)
-import qualified TableSecret
 import UserData (UserData)
 import qualified UserData
 
 data Row
-  = Row TableId TableSalt TableSecret RowSalt UserData
-  deriving (Show)
+  = Row Capacity UserData
+  deriving (Show, Eq, Ord)
 
-getTableSecret :: Row -> TableSecret
-getTableSecret (Row _ _ tableSecret _ _) =
-    tableSecret
+encode :: Row -> ByteString
+encode (Row capacity_ userData) =
+  Capacity.encode capacity_ <> UserData.encode userData
 
-getTableSalt :: Row -> TableSalt
-getTableSalt (Row _ tableSalt _ _ _) =
-    tableSalt
+capacity :: Row -> Capacity
+capacity (Row capacity_ _) =
+  capacity_
 
-isInTable :: TableId -> Row -> Bool
-isInTable wanted (Row got _ _ _ _) =
-    wanted == got
-
-encodeDb :: RowId -> RowSecret -> Row -> ByteString
-encodeDb rowId rowSecret (Row tableId tableSalt tableSecret rowSalt userData) =
-  mconcat
-    [ TableId.encode tableId,
-      TableSalt.encode tableSalt,
-      TableSecret.encode tableSecret,
-      RowId.encode rowId,
-      RowSalt.encode rowSalt,
-      RowSecret.encode rowSecret,
-      UserData.encodeDb userData
-    ]
-
-encodeHttp :: Key -> RowId -> RowSecret -> Row -> ByteString
-encodeHttp key rowId _ (Row tableId _ tableSecret _ userData) =
-    mconcat
-    [ RowId.encode
-    , RowSecret.
-
-parse :: Parser ((RowId, RowSecret), Row)
+parse :: Parser Row
 parse =
   do
-    tableId <- TableId.parse
-    tableSalt <- TableSalt.parse
-    tableSecret <- TableSecret.parseDb
-    rowId <- RowId.parse
-    rowSalt <- RowSalt.parse
-    rowSecret <- RowSecret.parseDb
+    capacity_ <- Capacity.parse
     userData <- UserData.parseDb
-    return $
-      ( (rowId, rowSecret),
-        Row tableId tableSalt tableSecret rowSalt userData
-      )
+    return $ Row capacity_ userData
