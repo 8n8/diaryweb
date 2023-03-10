@@ -32,6 +32,11 @@ capacity =
   Strict.pack
     [82, 16, 17, 204, 170, 207, 205, 124, 167, 152, 128, 61, 227, 6, 198, 100]
 
+capacity2 :: ByteString
+capacity2 =
+  Strict.pack
+    [84, 51, 137, 208, 221, 179, 135, 28, 254, 102, 254, 141, 173, 234, 77, 158]
+
 cases :: [Case]
 cases =
   [ Case
@@ -55,7 +60,7 @@ cases =
         dbOut = RawDb $ mconcat [capacity, Strict.pack [2, 0], "Hi"]
       },
     Case
-      { description = "get",
+      { description = "get with single item",
         bodyIn =
           RawBody $
             Lazy.fromStrict $
@@ -70,5 +75,40 @@ cases =
                 "Hi"
               ],
         dbOut = RawDb $ mconcat [capacity, Strict.pack [2, 0], "Hi"]
+      },
+    Case
+      { description = "get with two items in DB, one matching",
+        bodyIn =
+          RawBody $
+            Lazy.fromStrict $
+              Strict.singleton Indicator.get <> capacity,
+        dbIn =
+          RawDb $
+            mconcat
+              [ capacity,
+                Strict.pack [2, 0],
+                "Hi",
+                capacity2,
+                Strict.pack [3, 0],
+                "Hey"
+              ],
+        bodyOut =
+          RawBody $
+            mconcat
+              [ Lazy.singleton Indicator.got,
+                Lazy.fromStrict capacity,
+                Lazy.pack [2, 0],
+                "Hi"
+              ],
+        dbOut =
+          RawDb $
+            mconcat
+              [ capacity,
+                Strict.pack [2, 0],
+                "Hi",
+                capacity2,
+                Strict.pack [3, 0],
+                "Hey"
+              ]
       }
   ]
