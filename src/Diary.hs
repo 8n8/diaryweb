@@ -28,14 +28,14 @@ handleValidRequest :: Request -> Db -> (RawBody, RawDb)
 handleValidRequest request db =
   case request of
     Request.Create row ->
-      handleSaveRequest row db
+      handleCreateRequest row db
     Request.Get capacity ->
       (handleGetRequest capacity db, RawDb $ Db.encode db)
     Request.Delete capacity ->
       handleDeleteRequest capacity db
 
-handleSaveRequest :: Row -> Db -> (RawBody, RawDb)
-handleSaveRequest row db =
+handleCreateRequest :: Row -> Db -> (RawBody, RawDb)
+handleCreateRequest row db =
   ( RawBody $ Lazy.singleton Indicator.created,
     RawDb $ Db.encode $ Db.insert row db
   )
