@@ -51,12 +51,7 @@ cases =
                   "Hi"
                 ],
         dbIn = RawDb "",
-        bodyOut =
-          RawBody $
-            mconcat
-              [ Lazy.singleton Indicator.created,
-                Lazy.fromStrict capacity
-              ],
+        bodyOut = RawBody (Lazy.singleton Indicator.created),
         dbOut = RawDb $ mconcat [capacity, Strict.pack [2, 0], "Hi"]
       },
     Case

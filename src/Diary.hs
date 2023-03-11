@@ -1,7 +1,6 @@
 module Diary (diary) where
 
 import Capacity (Capacity)
-import qualified Capacity
 import Data.Attoparsec.ByteString (parseOnly)
 import qualified Data.ByteString.Lazy as Lazy
 import qualified Data.Set as Set
@@ -37,11 +36,7 @@ handleValidRequest request db =
 
 handleSaveRequest :: Row -> Db -> (RawBody, RawDb)
 handleSaveRequest row db =
-  ( RawBody $
-      mconcat
-        [ Lazy.singleton Indicator.created,
-          Lazy.fromStrict $ Capacity.encode $ Row.capacity row
-        ],
+  ( RawBody $ Lazy.singleton Indicator.created,
     RawDb $ Db.encode $ Db.insert row db
   )
 
