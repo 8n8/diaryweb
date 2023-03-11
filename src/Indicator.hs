@@ -5,6 +5,8 @@ module Indicator
     serverError,
     got,
     get,
+    delete,
+    deleted,
   )
 where
 
@@ -34,3 +36,11 @@ got =
 get :: Word8
 get =
   5
+
+delete :: Word8
+delete =
+  6
+
+deleted :: Word8
+deleted =
+  7

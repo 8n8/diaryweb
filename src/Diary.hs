@@ -32,6 +32,8 @@ handleValidRequest request db =
       handleSaveRequest row db
     Request.Get capacity ->
       (handleGetRequest capacity db, RawDb $ Db.encode db)
+    Request.Delete capacity ->
+      handleDeleteRequest capacity db
 
 handleSaveRequest :: Row -> Db -> (RawBody, RawDb)
 handleSaveRequest row db =
@@ -41,6 +43,12 @@ handleSaveRequest row db =
           Lazy.fromStrict $ Capacity.encode $ Row.capacity row
         ],
     RawDb $ Db.encode $ Db.insert row db
+  )
+
+handleDeleteRequest :: Capacity -> Db -> (RawBody, RawDb)
+handleDeleteRequest capacity db =
+  ( RawBody (Lazy.singleton Indicator.deleted),
+    RawDb $ Db.encode $ Db.delete capacity db
   )
 
 handleGetRequest :: Capacity -> Db -> RawBody

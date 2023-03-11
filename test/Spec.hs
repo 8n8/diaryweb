@@ -176,5 +176,15 @@ cases =
                 Strict.pack [2, 0],
                 "Hi"
               ]
+      },
+    Case
+      { description = "delete",
+        bodyIn =
+          RawBody $
+            Lazy.fromStrict $
+              Strict.singleton Indicator.delete <> capacity,
+        dbIn = RawDb $ mconcat [capacity, Strict.pack [3, 0], "Hey"],
+        bodyOut = RawBody $ Lazy.singleton Indicator.deleted,
+        dbOut = RawDb ""
       }
   ]

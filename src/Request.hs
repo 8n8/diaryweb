@@ -10,6 +10,7 @@ import qualified Row
 data Request
   = Create Row
   | Get Capacity
+  | Delete Capacity
 
 parse :: Parser Request
 parse =
@@ -21,7 +22,10 @@ parse =
             fmap Create Row.parse,
           do
             _ <- word8 Indicator.get
-            fmap Get Capacity.parse
+            fmap Get Capacity.parse,
+          do
+            _ <- word8 Indicator.delete
+            fmap Delete Capacity.parse
         ]
 
     endOfInput

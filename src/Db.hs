@@ -1,4 +1,4 @@
-module Db (Db, parse, insert, encode, empty, get) where
+module Db (Db, parse, insert, encode, empty, get, delete) where
 
 import Capacity (Capacity)
 import Data.Attoparsec.ByteString (Parser)
@@ -15,6 +15,10 @@ newtype Db
 encode :: Db -> ByteString
 encode (Db rows) =
   mconcat $ map Row.encode $ Set.toList rows
+
+delete :: Capacity -> Db -> Db
+delete capacity (Db rows) =
+  Db (Set.filter (\row -> Row.capacity row /= capacity) rows)
 
 insert :: Row -> Db -> Db
 insert row (Db rows) =
