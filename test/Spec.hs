@@ -148,5 +148,33 @@ cases =
                 Strict.pack [2, 0],
                 "Hi"
               ]
+      },
+    Case
+      { description = "get with two items in DB, neither matching",
+        bodyIn =
+          RawBody $
+            Lazy.fromStrict $
+              Strict.singleton Indicator.get <> capacity,
+        dbIn =
+          RawDb $
+            mconcat
+              [ capacity2,
+                Strict.pack [3, 0],
+                "Hey",
+                capacity2,
+                Strict.pack [2, 0],
+                "Hi"
+              ],
+        bodyOut = RawBody $ Lazy.singleton Indicator.got,
+        dbOut =
+          RawDb $
+            mconcat
+              [ capacity2,
+                Strict.pack [3, 0],
+                "Hey",
+                capacity2,
+                Strict.pack [2, 0],
+                "Hi"
+              ]
       }
   ]
