@@ -43,8 +43,49 @@ main =
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update _ model =
-    ( model, Cmd.none )
+update msg model =
+    case model of
+        FatalError _ ->
+            ( model, Cmd.none )
+
+        GettingTimeZone ->
+            updateGettingTimeZone msg
+
+        Ok okModel ->
+            updateOk msg okModel
+
+
+updateGettingTimeZone : Msg -> ( Model, Cmd Msg )
+updateGettingTimeZone msg =
+    case msg of
+        AccessCode _ ->
+            ( GettingTimeZone, Cmd.none )
+
+        DiaryEntry _ ->
+            ( GettingTimeZone, Cmd.none )
+
+        TimeZone zone ->
+            ( { accessCodeBox = ""
+              , diaryEntryBox = ""
+              , rows = Rows.empty
+              , zone = zone
+              }
+                |> Ok
+            , Cmd.none
+            )
+
+
+updateOk : Msg -> OkModel -> ( Model, Cmd Msg )
+updateOk msg model =
+    case msg of
+        AccessCode accessCode ->
+            ( Ok { model | accessCodeBox = accessCode }, Cmd.none )
+
+        DiaryEntry diaryEntry ->
+            ( Ok { model | diaryEntryBox = diaryEntry }, Cmd.none )
+
+        TimeZone zone ->
+            ( Ok { model | zone = zone }, Cmd.none )
 
 
 view : Model -> Document Msg
