@@ -11,6 +11,8 @@ import Row exposing (Row)
 import Rows exposing (Rows)
 import Task
 import Time exposing (Month, Posix, Zone)
+import Bytes exposing (Bytes)
+import Base64
 
 
 type Model
@@ -20,17 +22,23 @@ type Model
 
 
 type alias OkModel =
-    { accessCodeBox : String
+    { accessCodeBox : Maybe Bytes
     , diaryEntryBox : String
-    , rows : Rows
+    , rows : Loadable Rows
     , zone : Zone
     }
+
+
+type Loadable a
+    = Loading
+    | Loaded a
 
 
 type Msg
     = AccessCode String
     | DiaryEntry String
     | TimeZone Zone
+    | SubmitAccessCode Bytes
 
 
 main =
@@ -65,7 +73,7 @@ updateGettingTimeZone msg =
             ( GettingTimeZone, Cmd.none )
 
         TimeZone zone ->
-            ( { accessCodeBox = ""
+            ( { accessCodeBox = Nothing
               , diaryEntryBox = ""
               , rows = Rows.empty
               , zone = zone
@@ -74,12 +82,20 @@ updateGettingTimeZone msg =
             , Cmd.none
             )
 
+        SubmitAccessCode _ ->
+            ( GettingTimeZone, Cmd.none )
+
 
 updateOk : Msg -> OkModel -> ( Model, Cmd Msg )
 updateOk msg model =
     case msg of
         AccessCode accessCode ->
-            ( Ok { model | accessCodeBox = accessCode }, Cmd.none )
+            case Base64.toBytes accessCode of
+                Nothing ->
+                    (Ok model, Cmd.none)
+
+                Just bytes ->
+                    ( Ok { model | accessCodeBox = Just bytes }, Cmd.none )
 
         DiaryEntry diaryEntry ->
             ( Ok { model | diaryEntryBox = diaryEntry }, Cmd.none )
@@ -271,15 +287,26 @@ viewDiaryEntryBox diaryEntryBox =
         }
 
 
-viewTopBar : String -> Element Msg
+viewTopBar : Maybe Bytes -> Element Msg
 viewTopBar accessCodeBox =
-    Input.text
+    [ Input.text
         []
         { onChange = AccessCode
-        , text = accessCodeBox
+        , text =
+            case accessCodeBox of
+                Nothing -> ""
+                Just bytes ->
+                    Base64.fromBytes bytes |> Maybe.withDefault ""
         , placeholder = Nothing
         , label = Input.labelLeft [] (Element.text "Access code:")
         }
+    , Input.button
+        []
+        { onPress = Maybe.map SubmitAccessCode accessCodeBox
+        , label = Element.text "Submit"
+        }
+    ]
+        |> Element.row []
 
 
 viewFatalError : String -> Element msg
