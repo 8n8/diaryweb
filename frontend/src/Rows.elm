@@ -1,4 +1,4 @@
-module Rows exposing (Rows, empty)
+module Rows exposing (Rows, empty, toList)
 
 import Dict exposing (Dict)
 import Row exposing (Row)
@@ -11,3 +11,8 @@ type Rows
 empty : Rows
 empty =
     Rows Dict.empty
+
+
+toList : Rows -> List Row
+toList (Rows rows) =
+    Dict.values rows

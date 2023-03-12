@@ -1,10 +1,10 @@
-module Row exposing (Row)
+module Row exposing (Row(..))
 
-import Capability exposing (Capability)
+import AccessCode exposing (AccessCode)
+import Time exposing (Posix)
 
 
 type Row
     = NotFound
-    | NotRequested Capability
-    | Loaded String
+    | Loaded Posix String
     | Loading
