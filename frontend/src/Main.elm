@@ -1,21 +1,59 @@
 module Main exposing (main)
 
+import Browser exposing (Document)
+import Capability exposing (Capability)
 import Html
 import Rows exposing (Rows)
-import Capability exposing (Capability)
+
 
 type Model
     = FatalError String
-    | EnterAccessCode String
-    | EnterDiary String
-    | ViewDiary Diary
+    | Ok OkModel
 
 
-type alias Diary =
-    { capability : Capability
+type alias OkModel =
+    { accessCodeBox : String
+    , diaryEntryBox : String
     , rows : Rows
     }
 
 
+type Msg
+    = Msg
+
+
 main =
-    Html.text "Hi"
+    Browser.document
+        { init = init
+        , view = view
+        , update = update
+        , subscriptions = subscriptions
+        }
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update _ model =
+    ( model, Cmd.none )
+
+
+view : Model -> Document Msg
+view _ =
+    { title = "Diary"
+    , body = [ Html.text "Hello" ]
+    }
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Sub.none
+
+
+init : () -> ( Model, Cmd Msg )
+init _ =
+    ( { accessCodeBox = ""
+      , diaryEntryBox = ""
+      , rows = Rows.empty
+      }
+        |> Ok
+    , Cmd.none
+    )
