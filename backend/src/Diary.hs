@@ -8,7 +8,6 @@ import qualified Data.ByteString.Lazy as Lazy
 import qualified Data.Set as Set
 import Db (Db)
 import qualified Db
-import qualified Indicator
 import RawBody (RawBody (RawBody))
 import qualified RawBody
 import RawDb (RawDb (RawDb))
