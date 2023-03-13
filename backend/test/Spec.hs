@@ -51,7 +51,7 @@ cases =
                   "Hi"
                 ],
         dbIn = RawDb "",
-        bodyOut = RawBody (Lazy.singleton Indicator.created),
+        bodyOut = RawBody "",
         dbOut = RawDb $ mconcat [capacity, Strict.pack [2, 0], "Hi"]
       },
     Case
@@ -61,14 +61,7 @@ cases =
             Lazy.fromStrict $
               Strict.singleton Indicator.get <> capacity,
         dbIn = RawDb $ mconcat [capacity, Strict.pack [2, 0], "Hi"],
-        bodyOut =
-          RawBody $
-            mconcat
-              [ Lazy.singleton Indicator.got,
-                Lazy.fromStrict capacity,
-                Lazy.pack [2, 0],
-                "Hi"
-              ],
+        bodyOut = RawBody $ mconcat [Lazy.pack [2, 0], "Hi"],
         dbOut = RawDb $ mconcat [capacity, Strict.pack [2, 0], "Hi"]
       },
     Case
@@ -87,14 +80,7 @@ cases =
                 Strict.pack [3, 0],
                 "Hey"
               ],
-        bodyOut =
-          RawBody $
-            mconcat
-              [ Lazy.singleton Indicator.got,
-                Lazy.fromStrict capacity,
-                Lazy.pack [2, 0],
-                "Hi"
-              ],
+        bodyOut = RawBody $ mconcat [Lazy.pack [2, 0], "Hi"],
         dbOut =
           RawDb $
             mconcat
@@ -125,11 +111,9 @@ cases =
         bodyOut =
           RawBody $
             mconcat
-              [ Lazy.singleton Indicator.got,
-                Lazy.fromStrict capacity,
+              [ Lazy.pack [2, 0, 0, 0],
                 Lazy.pack [3, 0],
                 "Hey",
-                Lazy.fromStrict capacity,
                 Lazy.pack [2, 0],
                 "Hi"
               ],
@@ -160,7 +144,7 @@ cases =
                 Strict.pack [2, 0],
                 "Hi"
               ],
-        bodyOut = RawBody $ Lazy.singleton Indicator.got,
+        bodyOut = RawBody "",
         dbOut =
           RawDb $
             mconcat
@@ -174,10 +158,7 @@ cases =
       },
     Case
       { description = "delete",
-        bodyIn =
-          RawBody $
-            Lazy.fromStrict $
-              Strict.singleton Indicator.delete <> capacity,
+        bodyIn = RawBody "",
         dbIn = RawDb $ mconcat [capacity, Strict.pack [3, 0], "Hey"],
         bodyOut = RawBody $ Lazy.singleton Indicator.deleted,
         dbOut = RawDb ""
