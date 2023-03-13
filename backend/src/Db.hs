@@ -14,7 +14,7 @@ newtype Db
 
 encode :: Db -> ByteString
 encode (Db rows) =
-  mconcat $ map Row.encode $ Set.toList rows
+  mconcat $ map Row.encodeDb $ Set.toList rows
 
 delete :: Capacity -> Db -> Db
 delete capacity (Db rows) =

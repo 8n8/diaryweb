@@ -1,4 +1,4 @@
-module Row (Row (..), parse, encode, capacity) where
+module Row (Row (..), parse, encodeDb, capacity, encodeHttp) where
 
 import Capacity (Capacity)
 import qualified Capacity
@@ -11,9 +11,13 @@ data Row
   = Row Capacity UserData
   deriving (Show, Eq, Ord)
 
-encode :: Row -> ByteString
-encode (Row capacity_ userData) =
+encodeDb :: Row -> ByteString
+encodeDb (Row capacity_ userData) =
   Capacity.encode capacity_ <> UserData.encode userData
+
+encodeHttp :: Row -> ByteString
+encodeHttp (Row _ userData) =
+  UserData.encode userData
 
 capacity :: Row -> Capacity
 capacity (Row capacity_ _) =

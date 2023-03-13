@@ -49,14 +49,11 @@ handleDeleteRequest capacity db =
 handleGetRequest :: Capacity -> Db -> RawBody
 handleGetRequest capacity db =
   RawBody $
-    mconcat
-      [ Lazy.singleton Indicator.got,
-        Lazy.fromStrict $
-          mconcat $
-            map Row.encode $
-              Set.toList $
-                Db.get capacity db
-      ]
+    Lazy.fromStrict $
+      mconcat $
+        map Row.encodeHttp $
+          Set.toList $
+            Db.get capacity db
 
 parse :: RawBody -> RawDb -> Either RawBody (Request, Db)
 parse rawBody rawDb =
