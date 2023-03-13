@@ -61,7 +61,13 @@ cases =
             Lazy.fromStrict $
               Strict.singleton Indicator.get <> capacity,
         dbIn = RawDb $ mconcat [capacity, Strict.pack [2, 0], "Hi"],
-        bodyOut = RawBody $ mconcat [Lazy.pack [2, 0], "Hi"],
+        bodyOut =
+          RawBody $
+            mconcat
+              [ Lazy.pack [1, 0, 0, 0],
+                Lazy.pack [2, 0],
+                "Hi"
+              ],
         dbOut = RawDb $ mconcat [capacity, Strict.pack [2, 0], "Hi"]
       },
     Case
