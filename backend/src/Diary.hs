@@ -36,7 +36,7 @@ handleValidRequest request db =
 
 handleCreateRequest :: Row -> Db -> (RawBody, RawDb)
 handleCreateRequest row db =
-  ( RawBody $ Lazy.singleton Indicator.created,
+  ( RawBody "",
     RawDb $ Db.encode $ Db.insert row db
   )
 
