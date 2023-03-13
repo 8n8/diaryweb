@@ -86,7 +86,10 @@ cases =
                 Strict.pack [3, 0],
                 "Hey"
               ],
-        bodyOut = RawBody $ mconcat [Lazy.pack [2, 0], "Hi"],
+        bodyOut = RawBody $ mconcat
+            [ Lazy.pack [ 1, 0, 0, 0 ]
+            ,Lazy.pack [2, 0]
+            , "Hi"],
         dbOut =
           RawDb $
             mconcat
