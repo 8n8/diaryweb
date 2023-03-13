@@ -2,6 +2,8 @@ module Diary (diary) where
 
 import Capacity (Capacity)
 import Data.Attoparsec.ByteString (parseOnly)
+import Data.Bits (shiftR, (.&.))
+import qualified Data.ByteString as Strict
 import qualified Data.ByteString.Lazy as Lazy
 import qualified Data.Set as Set
 import Db (Db)
@@ -48,12 +50,20 @@ handleDeleteRequest capacity db =
 
 handleGetRequest :: Capacity -> Db -> RawBody
 handleGetRequest capacity db =
-  RawBody $
-    Lazy.fromStrict $
-      mconcat $
-        map Row.encodeHttp $
-          Set.toList $
-            Db.get capacity db
+  let matching = Set.toList $ Db.get capacity db
+   in RawBody $
+        Lazy.fromStrict $
+          mconcat $
+            encodeUint32 (length matching) : map Row.encodeHttp matching
+
+encodeUint32 :: Int -> Strict.ByteString
+encodeUint32 i =
+  Strict.pack
+    [ fromIntegral $ i .&. 0xff,
+      fromIntegral $ (shiftR i 8) .&. 0xff,
+      fromIntegral $ (shiftR i 16) .&. 0xff,
+      fromIntegral $ (shiftR i 24) .&. 0xff
+    ]
 
 parse :: RawBody -> RawDb -> Either RawBody (Request, Db)
 parse rawBody rawDb =
