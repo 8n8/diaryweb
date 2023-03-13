@@ -160,7 +160,7 @@ cases =
       { description = "delete",
         bodyIn = RawBody "",
         dbIn = RawDb $ mconcat [capacity, Strict.pack [3, 0], "Hey"],
-        bodyOut = RawBody $ Lazy.singleton Indicator.deleted,
+        bodyOut = RawBody "",
         dbOut = RawDb ""
       }
   ]
