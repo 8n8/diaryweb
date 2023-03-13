@@ -4,11 +4,13 @@ import AccessCode exposing (AccessCode)
 import Browser exposing (Document)
 import Element exposing (Element)
 import Element.Font as Font
+import Indicator
 import Element.Input as Input
 import Element.Region as Region
 import Html
 import Row exposing (Row)
 import Rows exposing (Rows)
+import Http
 import Task
 import Time exposing (Month, Posix, Zone)
 import Bytes exposing (Bytes)
@@ -32,6 +34,8 @@ type alias OkModel =
 type Loadable a
     = Loading
     | Loaded a
+    | NoSuchTable
+    | NotAsked
 
 
 type Msg
@@ -75,7 +79,7 @@ updateGettingTimeZone msg =
         TimeZone zone ->
             ( { accessCodeBox = Nothing
               , diaryEntryBox = ""
-              , rows = Rows.empty
+              , rows = NotAsked
               , zone = zone
               }
                 |> Ok
@@ -102,6 +106,37 @@ updateOk msg model =
 
         TimeZone zone ->
             ( Ok { model | zone = zone }, Cmd.none )
+
+        SubmitAccessCode accessCode ->
+            ( Ok { model | rows = Loading }
+            , { url = "/api"
+                , body =
+                    Http.bytesBody
+                        "application/octet-stream"
+                        ([ Encode.unsignedInt8 Indicator.get
+                         , Encode.bytes accessCode
+                         ]
+                            |> Encode.sequence
+                            |> Encode.encode)
+                , expect = Http.expectBytes GotTable decodeGotTable
+                }
+                    |> Http.post
+            )
+
+
+decodeGotTable : Decoder (List TableRow)
+decodeGotTable =
+    Decode.unsignedInt8
+        |> Decode.andThen (\indicator ->
+            if indicator == Indicator.got then
+                decodeTableRows
+
+            else
+                Decode.fail
+    Decode.map2 (\indicator tableRows ->
+        tableRows)
+        (Decode.unsignedInt8 
+        
 
 
 view : Model -> Document Msg
@@ -132,7 +167,9 @@ viewOk : OkModel -> Element Msg
 viewOk { accessCodeBox, diaryEntryBox, rows, zone } =
     [ viewTopBar accessCodeBox
     , viewDiaryEntryBox diaryEntryBox
-    , viewDiary zone rows
+    , case rows of
+        Loaded loaded ->
+           viewDiary zone loaded
     ]
         |> Element.column []
 
