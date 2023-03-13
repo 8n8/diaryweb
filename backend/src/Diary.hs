@@ -44,7 +44,7 @@ handleCreateRequest row db =
 
 handleDeleteRequest :: Capacity -> Db -> (RawBody, RawDb)
 handleDeleteRequest capacity db =
-  ( RawBody (Lazy.singleton Indicator.deleted),
+  ( RawBody "",
     RawDb $ Db.encode $ Db.delete capacity db
   )
 
