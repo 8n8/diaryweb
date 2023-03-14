@@ -1,22 +1,22 @@
 module Main exposing (main)
 
 import AccessCode exposing (AccessCode)
+import Base64
 import Browser exposing (Document)
+import Bytes exposing (Bytes)
+import Bytes.Decode as Decode exposing (Decoder)
+import Bytes.Encode as Encode
 import Element exposing (Element)
 import Element.Font as Font
-import Indicator
 import Element.Input as Input
 import Element.Region as Region
 import Html
+import Http
+import Indicator
 import Row exposing (Row)
 import Rows exposing (Rows)
-import Http
 import Task
 import Time exposing (Month, Posix, Zone)
-import Bytes exposing (Bytes)
-import Base64
-import Bytes.Encode as Encode
-import Bytes.Decode as Decode exposing (Decoder)
 
 
 type Model
@@ -47,6 +47,7 @@ type Msg
     | TimeZone Zone
     | SubmitAccessCode Bytes
     | GotTable (Result Http.Error (List AccessCode))
+    | RowResponse AccessCode (Result Http.Error ( Posix, String ))
 
 
 main =
@@ -103,7 +104,7 @@ updateOk msg model =
         AccessCode accessCode ->
             case Base64.toBytes accessCode of
                 Nothing ->
-                    (Ok model, Cmd.none)
+                    ( Ok model, Cmd.none )
 
                 Just bytes ->
                     ( Ok { model | accessCodeBox = Just bytes }, Cmd.none )
@@ -117,31 +118,33 @@ updateOk msg model =
         SubmitAccessCode accessCode ->
             ( Ok { model | rows = Loading }
             , { url = "/api"
-                , body =
+              , body =
                     Http.bytesBody
                         "application/octet-stream"
                         ([ Encode.unsignedInt8 Indicator.get
                          , Encode.bytes accessCode
                          ]
                             |> Encode.sequence
-                            |> Encode.encode)
-                , expect = Http.expectBytes GotTable decodeGotTable
-                }
-                    |> Http.post
+                            |> Encode.encode
+                        )
+              , expect = Http.expectBytes GotTable decodeGotTable
+              }
+                |> Http.post
             )
 
         GotTable (Err (Http.BadUrl error)) ->
             ( FatalError ("bad URL when fetching table: " ++ error)
-            , Cmd.none)
+            , Cmd.none
+            )
 
         GotTable (Err Http.Timeout) ->
-            ( FatalError "timeout when fetching table", Cmd.none)
+            ( FatalError "timeout when fetching table", Cmd.none )
 
         GotTable (Err Http.NetworkError) ->
             ( NoInternet, Cmd.none )
 
         GotTable (Err (Http.BadStatus status)) ->
-            ( ["bad status when fetching table: "
+            ( [ "bad status when fetching table: "
               , String.fromInt status
               ]
                 |> String.concat
@@ -158,28 +161,108 @@ updateOk msg model =
             , Cmd.none
             )
 
-        GotTable (Ok accessCodes) ->
-            ( { model | rows = Loaded (Rows.fromAccessCodes accessCodes) }
-            , Rows.makeRowRequests accessCodes
+        GotTable (Result.Ok accessCodes) ->
+            ( Ok { model | rows = Loaded (makeRows accessCodes) }
+            , makeRowRequests accessCodes
+            )
+
+
+makeRows : List AccessCode -> Rows
+makeRows accessCodes =
+    List.foldr makeRowsHelp Rows.empty accessCodes
+
+
+makeRowsHelp : AccessCode -> Rows -> Rows
+makeRowsHelp accessCode rows =
+    Rows.insert accessCode Row.Loading rows
+
+
+makeRowRequests : List AccessCode -> Cmd Msg
+makeRowRequests accessCodes =
+    List.map makeRowRequest accessCodes |> Cmd.batch
+
+
+makeRowRequest : AccessCode -> Cmd Msg
+makeRowRequest accessCode =
+    { url = "/api"
+    , body =
+        Http.bytesBody "application/octet-stream" (getRowBody accessCode)
+    , expect = Http.expectBytes (RowResponse accessCode) decodeRow
+    }
+        |> Http.post
+
+
+getRowBody : AccessCode -> Bytes
+getRowBody accessCode =
+    [ Encode.unsignedInt8 Indicator.get
+    , Encode.bytes (AccessCode.toBytes accessCode)
+    ]
+        |> Encode.sequence
+        |> Encode.encode
+
+
+decodeRow : Decoder ( Posix, String )
+decodeRow =
+    decodeRaw |> Decode.andThen decodeRowHelp
+
+
+decodeRowHelp : Bytes -> Decoder ( Posix, String )
+decodeRowHelp bytes =
+    case Decode.decode decodeDiaryEntry bytes of
+        Nothing ->
+            Decode.fail
+
+        Just diaryEntry ->
+            Decode.succeed diaryEntry
+
+
+decodeDiaryEntry : Decoder ( Posix, String )
+decodeDiaryEntry =
+    Decode.map2 (\posix entry -> ( posix, entry ))
+        decodePosix
+        (Decode.unsignedInt16 Bytes.LE |> Decode.andThen Decode.string)
+
+
+decodePosix : Decoder Posix
+decodePosix =
+    Decode.unsignedInt32 Bytes.LE
+        |> Decode.map
+            (\raw ->
+                Time.millisToPosix (raw * 1000)
+            )
+
+
+decodeRaw : Decoder Bytes
+decodeRaw =
+    Decode.unsignedInt32 Bytes.LE
+        |> Decode.andThen
+            (\numRows ->
+                if numRows == 1 then
+                    Decode.unsignedInt16 Bytes.LE |> Decode.andThen Decode.bytes
+
+                else
+                    Decode.fail
             )
 
 
 decodeGotTable : Decoder (List AccessCode)
 decodeGotTable =
     Decode.unsignedInt32 Bytes.LE
-        |> Decode.andThen (\len ->
-            Decode.loop (len, []) decodeGotTableHelp)
+        |> Decode.andThen
+            (\len ->
+                Decode.loop ( len, [] ) decodeGotTableHelp
+            )
 
 
 decodeGotTableHelp :
-    (Int, List AccessCode) ->
-    Decoder (Decode.Step (Int, List AccessCode) (List AccessCode))
-decodeGotTableHelp (n, xs) =
+    ( Int, List AccessCode )
+    -> Decoder (Decode.Step ( Int, List AccessCode ) (List AccessCode))
+decodeGotTableHelp ( n, xs ) =
     if n <= 0 then
         Decode.succeed (Decode.Done xs)
 
     else
-        Decode.map (\x -> Decode.Loop (n - 1, x :: xs)) AccessCode.decode
+        Decode.map (\x -> Decode.Loop ( n - 1, x :: xs )) AccessCode.decode
 
 
 view : Model -> Document Msg
@@ -212,7 +295,7 @@ viewOk { accessCodeBox, diaryEntryBox, rows, zone } =
     , viewDiaryEntryBox diaryEntryBox
     , case rows of
         Loaded loaded ->
-           viewDiary zone loaded
+            viewDiary zone loaded
     ]
         |> Element.column []
 
@@ -374,7 +457,9 @@ viewTopBar accessCodeBox =
         { onChange = AccessCode
         , text =
             case accessCodeBox of
-                Nothing -> ""
+                Nothing ->
+                    ""
+
                 Just bytes ->
                     Base64.fromBytes bytes |> Maybe.withDefault ""
         , placeholder = Nothing

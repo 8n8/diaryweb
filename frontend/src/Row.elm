@@ -8,3 +8,4 @@ type Row
     = NotFound
     | Loaded Posix String
     | Loading
+    | Corrupted
