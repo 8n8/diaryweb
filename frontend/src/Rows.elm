@@ -1,4 +1,4 @@
-module Rows exposing (Rows, empty, toList)
+module Rows exposing (Rows, empty, toList, makeRowRequests)
 
 import Dict exposing (Dict)
 import Row exposing (Row)

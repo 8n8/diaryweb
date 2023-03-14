@@ -15,12 +15,15 @@ import Task
 import Time exposing (Month, Posix, Zone)
 import Bytes exposing (Bytes)
 import Base64
+import Bytes.Encode as Encode
+import Bytes.Decode as Decode exposing (Decoder)
 
 
 type Model
     = FatalError String
     | GettingTimeZone
     | Ok OkModel
+    | NoInternet
 
 
 type alias OkModel =
@@ -43,6 +46,7 @@ type Msg
     | DiaryEntry String
     | TimeZone Zone
     | SubmitAccessCode Bytes
+    | GotTable (Result Http.Error (List AccessCode))
 
 
 main =
@@ -65,6 +69,9 @@ update msg model =
 
         Ok okModel ->
             updateOk msg okModel
+
+        NoInternet ->
+            ( model, Cmd.none )
 
 
 updateGettingTimeZone : Msg -> ( Model, Cmd Msg )
@@ -123,20 +130,56 @@ updateOk msg model =
                     |> Http.post
             )
 
+        GotTable (Err (Http.BadUrl error)) ->
+            ( FatalError ("bad URL when fetching table: " ++ error)
+            , Cmd.none)
 
-decodeGotTable : Decoder (List TableRow)
+        GotTable (Err Http.Timeout) ->
+            ( FatalError "timeout when fetching table", Cmd.none)
+
+        GotTable (Err Http.NetworkError) ->
+            ( NoInternet, Cmd.none )
+
+        GotTable (Err (Http.BadStatus status)) ->
+            ( ["bad status when fetching table: "
+              , String.fromInt status
+              ]
+                |> String.concat
+                |> FatalError
+            , Cmd.none
+            )
+
+        GotTable (Err (Http.BadBody badBody)) ->
+            ( [ "bad body when fetching table: "
+              , badBody
+              ]
+                |> String.concat
+                |> FatalError
+            , Cmd.none
+            )
+
+        GotTable (Ok accessCodes) ->
+            ( { model | rows = Loaded (Rows.fromAccessCodes accessCodes) }
+            , Rows.makeRowRequests accessCodes
+            )
+
+
+decodeGotTable : Decoder (List AccessCode)
 decodeGotTable =
-    Decode.unsignedInt8
-        |> Decode.andThen (\indicator ->
-            if indicator == Indicator.got then
-                decodeTableRows
+    Decode.unsignedInt32 Bytes.LE
+        |> Decode.andThen (\len ->
+            Decode.loop (len, []) decodeGotTableHelp)
 
-            else
-                Decode.fail
-    Decode.map2 (\indicator tableRows ->
-        tableRows)
-        (Decode.unsignedInt8 
-        
+
+decodeGotTableHelp :
+    (Int, List AccessCode) ->
+    Decoder (Decode.Step (Int, List AccessCode) (List AccessCode))
+decodeGotTableHelp (n, xs) =
+    if n <= 0 then
+        Decode.succeed (Decode.Done xs)
+
+    else
+        Decode.map (\x -> Decode.Loop (n - 1, x :: xs)) AccessCode.decode
 
 
 view : Model -> Document Msg
