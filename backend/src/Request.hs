@@ -12,21 +12,6 @@ data Request
   | Get Capacity
   | Delete Capacity
 
-parse :: Parser Request
-parse =
-  do
-    request <-
-      choice
-        [ do
-            _ <- word8 Indicator.create
-            fmap Create Row.parse,
-          do
-            _ <- word8 Indicator.get
-            fmap Get Capacity.parse,
-          do
-            _ <- word8 Indicator.delete
-            fmap Delete Capacity.parse
-        ]
+instance FromJSON Request where
+    parseJSON (Object v) =
 
-    endOfInput
-    return request
