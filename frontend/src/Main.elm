@@ -97,6 +97,12 @@ updateGettingTimeZone msg =
         SubmitAccessCode _ ->
             ( GettingTimeZone, Cmd.none )
 
+        GotTable _ ->
+            ( GettingTimeZone, Cmd.none )
+
+        RowResponse _ _ ->
+            ( GettingTimeZone, Cmd.none )
+
 
 updateOk : Msg -> OkModel -> ( Model, Cmd Msg )
 updateOk msg model =
@@ -138,7 +144,7 @@ updateOk msg model =
             )
 
         GotTable (Err Http.Timeout) ->
-            ( FatalError "timeout when fetching table", Cmd.none )
+            ( NoInternet, Cmd.none )
 
         GotTable (Err Http.NetworkError) ->
             ( NoInternet, Cmd.none )
@@ -163,8 +169,40 @@ updateOk msg model =
 
         GotTable (Result.Ok accessCodes) ->
             ( Ok { model | rows = Loaded (makeRows accessCodes) }
-            , makeRowRequests accessCodes
-            )
+            , makeRowRequests accessCodes)
+        RowResponse _ (Err (Http.BadUrl error)) ->
+            ( FatalError ("bad URL when fetching row: " ++ error)
+            , Cmd.none)
+        RowResponse _ (Err Http.Timeout) ->
+            ( NoInternet, Cmd.none )
+        RowResponse _ (Err Http.NetworkError) ->
+            ( NoInternet, Cmd.none )
+        RowResponse _ (Err (Http.BadStatus status)) ->
+            ( [ "bad status when fetching row: ", String.fromInt status ]
+                |> String.concat |> FatalError
+            , Cmd.none)
+        RowResponse _ (Err (Http.BadBody badBody)) ->
+            ( [ "bad body when fetching row: ", badBody ]
+                |> String.concat |> FatalError
+            , Cmd.none)
+        RowResponse accessCode (Result.Ok (posix, diaryEntry)) ->
+            case model.rows of
+                Loading ->
+                    ( Ok model, Cmd.none )
+
+                Loaded oldRows ->
+                    ( { model
+                        | rows = Loaded (Rows.insert accessCode (Row.Loaded posix diaryEntry) oldRows)
+                      }
+                        |> Ok
+                    , Cmd.none
+                    )
+
+                NotAsked ->
+                    ( Ok model, Cmd.none )
+
+                NoSuchTable ->
+                    ( Ok model, Cmd.none )
 
 
 makeRows : List AccessCode -> Rows
@@ -288,6 +326,9 @@ viewElement model =
         GettingTimeZone ->
             Element.none
 
+        NoInternet ->
+            Element.text "no internet connection"
+
 
 viewOk : OkModel -> Element Msg
 viewOk { accessCodeBox, diaryEntryBox, rows, zone } =
@@ -296,6 +337,15 @@ viewOk { accessCodeBox, diaryEntryBox, rows, zone } =
     , case rows of
         Loaded loaded ->
             viewDiary zone loaded
+
+        Loading ->
+            Element.text "Loading..."
+
+        NoSuchTable ->
+            Element.text "Not found"
+
+        NotAsked ->
+            Element.text "Loading..."
     ]
         |> Element.column []
 
@@ -318,6 +368,9 @@ viewRow zone row =
 
         Row.Loading ->
             Element.text "Loading..."
+
+        Row.Corrupted ->
+            Element.text "Corrupted data"
 
 
 viewLoaded : Zone -> Posix -> String -> Element msg
