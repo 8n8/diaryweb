@@ -7,6 +7,7 @@ import Bytes exposing (Bytes)
 import Bytes.Decode as Decode exposing (Decoder)
 import Bytes.Encode as Encode
 import Element exposing (Element)
+import UserCode exposing (UserCode)
 import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
@@ -27,7 +28,7 @@ type Model
 
 
 type alias OkModel =
-    { accessCodeBox : Maybe Bytes
+    { accessCodeBox : String
     , diaryEntryBox : String
     , rows : Loadable Rows
     , zone : Zone
@@ -45,7 +46,7 @@ type Msg
     = AccessCode String
     | DiaryEntry String
     | TimeZone Zone
-    | SubmitAccessCode Bytes
+    | SubmitAccessCode UserCode
     | GotTable (Result Http.Error (List AccessCode))
     | RowResponse AccessCode (Result Http.Error ( Posix, String ))
 
@@ -85,7 +86,7 @@ updateGettingTimeZone msg =
             ( GettingTimeZone, Cmd.none )
 
         TimeZone zone ->
-            ( { accessCodeBox = Nothing
+            ( { accessCodeBox = ""
               , diaryEntryBox = ""
               , rows = NotAsked
               , zone = zone
@@ -108,12 +109,7 @@ updateOk : Msg -> OkModel -> ( Model, Cmd Msg )
 updateOk msg model =
     case msg of
         AccessCode accessCode ->
-            case Base64.toBytes accessCode of
-                Nothing ->
-                    ( Ok model, Cmd.none )
-
-                Just bytes ->
-                    ( Ok { model | accessCodeBox = Just bytes }, Cmd.none )
+                    ( Ok { model | accessCodeBox = accessCode }, Cmd.none )
 
         DiaryEntry diaryEntry ->
             ( Ok { model | diaryEntryBox = diaryEntry }, Cmd.none )
@@ -128,7 +124,7 @@ updateOk msg model =
                     Http.bytesBody
                         "application/octet-stream"
                         ([ Encode.unsignedInt8 Indicator.get
-                         , Encode.bytes accessCode
+                         , Encode.bytes (UserCode.toBytes accessCode)
                          ]
                             |> Encode.sequence
                             |> Encode.encode
@@ -503,28 +499,35 @@ viewDiaryEntryBox diaryEntryBox =
         }
 
 
-viewTopBar : Maybe Bytes -> Element Msg
+viewTopBar : String -> Element Msg
 viewTopBar accessCodeBox =
     [ Input.text
         []
         { onChange = AccessCode
-        , text =
-            case accessCodeBox of
-                Nothing ->
-                    ""
-
-                Just bytes ->
-                    Base64.fromBytes bytes |> Maybe.withDefault ""
+        , text = accessCodeBox
         , placeholder = Nothing
         , label = Input.labelLeft [] (Element.text "Access code:")
         }
-    , Input.button
-        []
-        { onPress = Maybe.map SubmitAccessCode accessCodeBox
-        , label = Element.text "Submit"
-        }
+    ,       case UserCode.fromString accessCodeBox of
+                Nothing ->
+                    accessCodeHelp
+
+                Just valid ->
+                        submitAccessCode valid
     ]
         |> Element.row []
+
+
+accessCodeHelp =
+    Element.text "The access code should be around 20 mixed characters."
+
+
+submitAccessCode accessCodeBox =
+    Input.button
+        []
+        { onPress = Just (SubmitAccessCode accessCodeBox)
+        , label = Element.text "Submit"
+        }
 
 
 viewFatalError : String -> Element msg
