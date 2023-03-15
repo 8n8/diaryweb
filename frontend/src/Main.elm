@@ -345,7 +345,7 @@ viewOk { accessCodeBox, diaryEntryBox, rows, zone } =
             Element.text "Not found"
 
         NotAsked ->
-            Element.text "Loading..."
+            Element.none
     ]
         |> Element.column []
 
