@@ -17,6 +17,7 @@ import Indicator
 import Row exposing (Row)
 import Rows exposing (Rows)
 import Task
+import Table exposing (Table)
 import Time exposing (Month, Posix, Zone)
 
 
@@ -30,22 +31,16 @@ type Model
 type alias OkModel =
     { accessCodeBox : String
     , diaryEntryBox : String
-    , rows : Loadable Rows
+    , table : Maybe Table
     , zone : Zone
     }
-
-
-type Loadable a
-    = Loading
-    | Loaded a
-    | NoSuchTable
-    | NotAsked
 
 
 type Msg
     = AccessCode String
     | DiaryEntry String
     | TimeZone Zone
+    | SubmitDiaryEntry
     | SubmitAccessCode UserCode
     | GotTable (Result Http.Error (List AccessCode))
     | RowResponse AccessCode (Result Http.Error ( Posix, String ))
@@ -88,7 +83,7 @@ updateGettingTimeZone msg =
         TimeZone zone ->
             ( { accessCodeBox = ""
               , diaryEntryBox = ""
-              , rows = NotAsked
+              , table = Nothing
               , zone = zone
               }
                 |> Ok
@@ -133,6 +128,18 @@ updateOk msg model =
               }
                 |> Http.post
             )
+
+        SubmitDiaryEntry ->
+            case model of
+                FatalError _ -> 
+                    ( Ok model, Cmd.none)
+
+                GettingTimeZone ->
+                    (Ok model, Cmd.none)
+
+                NoInternet ->
+                    (Ok model, Cmd.none )
+
 
         GotTable (Err (Http.BadUrl error)) ->
             ( FatalError ("bad URL when fetching table: " ++ error)
@@ -182,23 +189,15 @@ updateOk msg model =
                 |> String.concat |> FatalError
             , Cmd.none)
         RowResponse accessCode (Result.Ok (posix, diaryEntry)) ->
-            case model.rows of
-                Loading ->
-                    ( Ok model, Cmd.none )
-
-                Loaded oldRows ->
-                    ( { model
-                        | rows = Loaded (Rows.insert accessCode (Row.Loaded posix diaryEntry) oldRows)
-                      }
-                        |> Ok
-                    , Cmd.none
-                    )
-
-                NotAsked ->
-                    ( Ok model, Cmd.none )
-
-                NoSuchTable ->
-                    ( Ok model, Cmd.none )
+            ( { model
+                | table =
+                    Table.updateRow
+                        accessCode
+                        (Row.Loaded posix diaryEntry)
+                        model.table
+              }
+            , Cmd.none
+            )
 
 
 makeRows : List AccessCode -> Rows
@@ -489,7 +488,7 @@ viewMonth month =
 
 viewDiaryEntryBox : String -> Element Msg
 viewDiaryEntryBox diaryEntryBox =
-    Input.multiline
+    [ Input.multiline
         []
         { onChange = DiaryEntry
         , text = diaryEntryBox
@@ -497,6 +496,13 @@ viewDiaryEntryBox diaryEntryBox =
         , label = Input.labelAbove [] (Element.text "Write a diary entry:")
         , spellcheck = True
         }
+    , Input.button
+        []
+        { onPress = Just SubmitDiaryEntry
+        , label = Element.text "Submit"
+        }
+    ]
+        |> Element.column []
 
 
 viewTopBar : String -> Element Msg
