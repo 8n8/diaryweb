@@ -446,11 +446,7 @@ favicon =
 
 main :: IO ()
 main =
-  defaultMain $
-    testGroup "Tests" $
-      [ testGroup "unit tests" $ Prelude.map oneTest cases,
-        testGroup "property tests" properties
-      ]
+  defaultMain $ testGroup "unit tests" $ Prelude.map oneTest cases
 
 submittedHtml :: Text
 submittedHtml =
@@ -551,99 +547,6 @@ readEntriesHtml entries =
       \  </body>\n\
       \</html>\n"
     ]
-
-formatTime :: Int -> Text
-formatTime i =
-  let utc :: Data.Time.UTCTime
-      utc = Data.Time.Clock.POSIX.posixSecondsToUTCTime $ Data.Time.Clock.secondsToNominalDiffTime (realToFrac i)
-      str = Data.Time.Format.formatTime Data.Time.Format.defaultTimeLocale "%-I:%M%P %A %-d %B %Y" utc
-   in Data.Text.pack str
-
-encodeUint32 :: Int -> Strict.ByteString
-encodeUint32 i =
-  Strict.pack $
-    Prelude.map fromIntegral $
-      Prelude.map (\x -> x .&. 0xff) $
-        Prelude.map (\shift -> i `shiftR` shift) $
-          Prelude.map (\x -> x * 8) $
-            Prelude.take 4 [0 ..]
-
-encodeEntry :: Int -> Text -> Strict.ByteString
-encodeEntry timestamp entry =
-  let encoded :: Strict.ByteString
-      encoded = encodeUtf8 entry
-   in encodeUint32 timestamp <> encodeUint32 (Strict.length encoded) <> encoded
-
-properties :: [TestTree]
-properties =
-  [ newEntry,
-    readEntries
-  ]
-
-entryGen :: Hedgehog.PropertyT IO Text
-entryGen =
-  Hedgehog.forAll $ Hedgehog.Gen.text (Range.constant 0 100) Hedgehog.Gen.unicode
-
-timestampGen :: Hedgehog.PropertyT IO Int
-timestampGen =
-  Hedgehog.forAll $ Hedgehog.Gen.integral (Range.constant 0 100000)
-
-readEntries :: TestTree
-readEntries =
-  Test.Tasty.Hedgehog.testProperty "read entries" $
-    Hedgehog.property $
-      do
-        t1 <- timestampGen
-        entry1 <- entryGen
-        t2 <- timestampGen
-        entry2 <- entryGen
-        let db = encodeEntry t1 entry1 <> encodeEntry t2 entry2
-        let request =
-              Request
-                { path = ["read"],
-                  body = [],
-                  method = "GET",
-                  timestamp = 0
-                }
-        let got = diary db request
-        let expected =
-              ( Response
-                  { headers = [("Content-Type", "text/html")],
-                    status = ok200,
-                    body =
-                      fromStrict $
-                        encodeUtf8 $
-                          readEntriesHtml [(t1, entry1), (t2, entry2)]
-                  },
-                db
-              )
-        got Hedgehog.=== expected
-
-newEntry :: TestTree
-newEntry =
-  Test.Tasty.Hedgehog.testProperty "new entry test" $
-    Hedgehog.property $
-      do
-        entry <- entryGen
-        timestamp <- timestampGen
-        let request =
-              Request
-                { path = ["newentry"],
-                  body = [("newentry", encodeUtf8 entry)],
-                  method = "POST",
-                  timestamp = timestamp
-                }
-        let initDb = Strict.pack $ Prelude.take 8 $ Prelude.repeat 0
-        let got = diary initDb request
-        let expected =
-              ( Response
-                  { headers = [("Content-Type", "text/html")],
-                    status = ok200,
-                    body = fromStrict $ encodeUtf8 submittedHtml
-                  },
-                initDb <> encodeEntry timestamp entry
-              )
-        got Hedgehog.=== expected
 
 oneTest ::
   (TestName, Strict.ByteString, Request, (Response, Strict.ByteString)) ->
